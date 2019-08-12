@@ -105,3 +105,17 @@ func (mr *MockConfigerMockRecorder) DisableMachine(name interface{}) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableMachine", reflect.TypeOf((*MockConfiger)(nil).DisableMachine), name)
 }
+
+// UpdateProvisionedStatus mocks base method
+func (m *MockConfiger) UpdateProvisionedStatus(name string, ok bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProvisionedStatus", name, ok)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProvisionedStatus indicates an expected call of UpdateProvisionedStatus
+func (mr *MockConfigerMockRecorder) UpdateProvisionedStatus(name, ok interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProvisionedStatus", reflect.TypeOf((*MockConfiger)(nil).UpdateProvisionedStatus), name, ok)
+}

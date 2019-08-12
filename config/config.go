@@ -15,6 +15,7 @@ type Configer interface {
 	ListMachines() (map[string]Host, error)
 	EnableMachine(name string) error
 	DisableMachine(name string) error
+	UpdateProvisionedStatus(name string, ok bool) error
 }
 
 // Config config of fx

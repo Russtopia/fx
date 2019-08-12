@@ -14,6 +14,7 @@ import (
 	"github.com/metrue/fx/config"
 	"github.com/metrue/fx/constants"
 	"github.com/metrue/fx/doctor"
+	"github.com/metrue/fx/handlers"
 	"github.com/metrue/fx/packer"
 	"github.com/metrue/fx/provision"
 	"github.com/metrue/fx/types"
@@ -199,63 +200,13 @@ func main() {
 					Name:  "healthcheck, hc",
 					Usage: "do a health check after service up",
 				},
+				cli.BoolFlag{
+					Name:  "force, f",
+					Usage: "force deploy a function or functions",
+				},
 			},
 			Action: func(c *cli.Context) error {
-				name := c.String("name")
-				port := c.Int("port")
-				if port == 0 {
-					log.Fatalf("invalid port %d", port)
-					return nil
-				}
-				hosts, err := cfg.ListActiveMachines()
-				if err != nil {
-					log.Fatalf("list active machines failed: %v", err)
-				}
-
-				funcFile := c.Args().First()
-				body, err := ioutil.ReadFile(funcFile)
-				if err != nil {
-					log.Fatalf("Read Source: %v", err)
-					return err
-				}
-				lang := utils.GetLangFromFileName(funcFile)
-
-				fn := types.ServiceFunctionSource{
-					Language: lang,
-					Source:   string(body),
-				}
-				project, err := packeer.Pack(name, fn)
-				if err != nil {
-					panic(err)
-				}
-
-				for n, host := range hosts {
-					if !host.Provisioned {
-						provisionor := provision.New(host)
-						if err := provisionor.Start(); err != nil {
-							log.Fatalf("could not provision %s: %v", name, err)
-							return nil
-						}
-						log.Infof("provision machine %v: %s", name, constants.CheckedSymbol)
-						if err := cfg.UpdateProvisionedStatus(n, true); err != nil {
-							log.Fatalf("update machine provision status failed: %v", err)
-						}
-					}
-
-					if err := fx(host).Up(api.UpOptions{
-						Body:       body,
-						Lang:       lang,
-						Name:       name,
-						Port:       port,
-						HealtCheck: c.Bool("healthcheck"),
-						Project:    project,
-					}); err != nil {
-						log.Fatalf("up function %s(%s) to machine %s failed: %v", name, funcFile, n, err)
-					} else {
-						log.Infof("up function %s(%s) to machine %s: %v", name, funcFile, n, constants.CheckedSymbol)
-					}
-				}
-				return nil
+				return handlers.Up(cfg, packeer)(c)
 			},
 		},
 		{
@@ -263,18 +214,7 @@ func main() {
 			Usage:     "destroy a service",
 			ArgsUsage: "[service 1, service 2, ....]",
 			Action: func(c *cli.Context) error {
-				hosts, err := cfg.ListActiveMachines()
-				if err != nil {
-					log.Fatalf("list active machines failed: %v", err)
-				}
-				for name, host := range hosts {
-					if err := fx(host).Down(c.Args()); err != nil {
-						log.Fatalf("stop function on machine %s failed: %v", name, err)
-					} else {
-						log.Infof("stop function on machine %s: %v", name, constants.CheckedSymbol)
-					}
-				}
-				return nil
+				return handlers.Down(cfg)(c)
 			},
 		},
 		{
